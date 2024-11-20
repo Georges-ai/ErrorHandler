@@ -1,0 +1,21 @@
+#Lees Error Tabel in en maak er een linked list mee
+
+maak een struct tbl:
+    ErrorCode
+    msg
+    next
+
+struct tbl *head = NULL
+
+removeWhiteSpace(string)
+    lengte string
+    If lengte string > 0 and lengte van string == nieuwe regel of lengte van string == remove wit ruimte:
+       string splitsen
+
+IF:
+    "#" in de error tabel
+    volgende lijn
+ELSE:
+    ErrorCode 
+
+#ontvangen van errorcode via mqtt
