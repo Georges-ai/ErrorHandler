@@ -1,0 +1,4 @@
+gcc test2MQTT.c -lpaho-mqtt3c -o test2MQTT
+gcc test4MQTT.c -lpaho-mqtt3c -o test4MQTT
+
+gcc file.c -lpaho-mqtt3c -o file

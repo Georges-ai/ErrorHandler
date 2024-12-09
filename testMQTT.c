@@ -4,6 +4,16 @@
 #include "Config.h"
 #include "MQTTClient.h"
 
+volatile MQTTClient_deliveryToken delivered_token;
+
+int messageArrivedHandler(void* context, char* topicName, int topicLen, MQTTClient_message* message) {
+    printf("Message arrived on topic: %s\n", topicName);
+    printf("Message: %.*s\n", message->payloadlen, (char*)message->payload);
+    MQTTClient_freeMessage(&message);
+    MQTTClient_free(topicName);
+    return 1;  // Indicate successful processing
+}
+
 struct tbl {
     char error_msg[Len_Error_Msg];
     char error_code[Len_Error_Code];
@@ -108,6 +118,21 @@ void print_list() {
     printf("End of error list.\n");
 }
 
+void free_list() {
+    struct tbl *p = head;
+    struct tbl *next;
+    while (p != NULL) {
+        next = p->next;
+        free(p);
+        p = next;
+    }
+    head = NULL;
+    tail = NULL;
+}
+
+
+ 
+
 int main(int argc, char *argv[]) {
     // Check if the filename is provided
     if (argc < 2) {
@@ -127,4 +152,43 @@ int main(int argc, char *argv[]) {
 
     splitStrings(file);
     print_list();
+
+
+    MQTTClient client;
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    int rc;
+
+    MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+
+    // Set callback to handle incoming messages
+    MQTTClient_setCallbacks(client, NULL, NULL, messageArrivedHandler, NULL);
+
+    // Connect to the broker
+    if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS) {
+        printf("Failed to connect, return code %d\n", rc);
+        free_list();
+        MQTTClient_destroy(&client);
+        return 1;
+    }
+    printf("Connected to the broker.\n");
+
+    // Subscribe to the topic
+    MQTTClient_subscribe(client, TOPICRecv, QOS);
+
+    printf("Subscribed to topic: %s\n", TOPICRecv);
+    printf("Waiting for messages...\n");
+
+    // Keep the main function running to listen for messages
+    while (1) {
+        // Infinite loop to keep receiving messages
+        // Could add some other conditions to exit if needed
+    }
+
+    // Disconnect and clean up
+    MQTTClient_disconnect(client, 10000);
+    MQTTClient_destroy(&client);
+    free_list();
+    return rc;
 }

@@ -1,21 +1,76 @@
-#Lees Error Tabel in en maak er een linked list mee
+Define constants and includes
+Define structure for table entry (tbl)
+Initialize global variables: head and tail pointers for the linked list
+Define global MQTT token
 
-maak een struct tbl:
-    ErrorCode
-    msg
-    next
+Function insert_first(error_code, error_msg):
+    Allocate memory for new node
+    If allocation fails, print error and exit
+    Copy error_code and error_msg into the node
+    Set next pointer to current head
+    Update head to new node
+    If tail is NULL, set tail to new node
 
-struct tbl *head = NULL
+Function insert_next(list, error_code, error_msg):
+    Allocate memory for new node
+    If allocation fails, print error and exit
+    Copy error_code and error_msg into the node
+    Set next pointer to NULL
+    Set current list's next pointer to new node
 
-removeWhiteSpace(string)
-    lengte string
-    If lengte string > 0 and lengte van string == nieuwe regel of lengte van string == remove wit ruimte:
-       string splitsen
+Function search_list(error_code):
+    Trim error_code to remove newline and carriage return characters
+    Traverse the linked list from head to tail
+        For each node, trim its error_code and compare with input error_code
+        If match found, print "Found!" and the error message
+        Allocate memory for a copy of the error message
+        If allocation fails, print error and return NULL
+        Copy the error message into the allocated memory and return it
+    If no match found, print "Error message not found." and return NULL
 
-IF:
-    "#" in de error tabel
-    volgende lijn
-ELSE:
-    ErrorCode 
+Function splitStrings(file):
+    Read and check the first line; if it doesn't start with '#', print it
+    Read the rest of the file line by line
+        If the line doesn't start with '#', split it into fields using tab as delimiter
+        If exactly two fields are present, insert them into the linked list using insert_first
+        Otherwise, print an error message
+    Close the file
 
-#ontvangen van errorcode via mqtt
+Function print_list():
+    Traverse the linked list from head to tail
+        Print each error code and message in a formatted table
+
+Function delivered(context, dt):
+    Print confirmation of message delivery with token value
+    Set global deliveredtoken to dt
+
+Function msgarrvd(context, topicName, topicLen, message):
+    Copy message payload to local buffer
+    Make a copy of error_in to error_in_copy
+    Tokenize error_in_copy to extract severity, application, error_code, and text
+    Print extracted error_code and text
+    Search the linked list for the error_code
+        If found, format the output message using the lookup result and Text
+        If not found, set error_out to indicate error_code not found
+    Format the final output message including timestamp, severity, application, error_code, and formatted message
+    Print the formatted output
+    Publish the formatted message to the publication topic via MQTT
+    Wait for publication confirmation
+    Free resources
+
+Function connlost(context, cause):
+    Print connection loss message and cause
+
+Main Function:
+    Check if filename is provided as command-line argument; if not, use default
+    Open the specified file; if fails, try default file
+    Read and store error codes and messages from the file into the linked list
+    Print the linked list
+    Set up MQTT client
+        Create client
+        Set callback functions: connlost, msgarrvd, delivered
+        Connect to MQTT broker
+        Subscribe to the subscription topic
+    Enter an infinite loop to keep the program running
+    (Note: MQTT client operations are asynchronous, so the program needs to remain active to handle callbacks)
+    (Disconnect and destroy client resources - this part is technically unreachable due to the infinite loop)
